@@ -16,10 +16,11 @@ router.post("/", createLead);
 
 router.get("/", getLeads);
 
-router.patch("/:id/status", updateLeadStatus);
-
 router.post("/bulk", createBulkLeads);
 
 router.patch("/bulk/status", updateBulkLeadStatus);
+
+router.patch("/:id/status", updateLeadStatus);
+
 
 export default router;

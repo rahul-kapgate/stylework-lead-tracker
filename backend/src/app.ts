@@ -3,7 +3,7 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import { pinoHttp}  from "pino-http";
+import { pinoHttp } from "pino-http";
 import { env } from "./config/env.js";
 
 import leadRoutes from "./modules/leads/lead.routes.js";
@@ -22,7 +22,9 @@ app.use(
 
 app.use(express.json());
 
-app.use(pinoHttp());
+if (env.NODE_ENV !== "test") {
+  app.use(pinoHttp());
+}
 
 app.get("/health", (_req, res) => {
   res.status(200).json({

@@ -137,21 +137,21 @@ export async function updateLeadStatus(
     `
       UPDATE leads
       SET
-        status = $2,
+        status = $2::lead_status,
 
         lead_journey =
           lead_journey ||
           jsonb_build_array(
             jsonb_build_object(
-              'status', $2,
+              'status', ($2::lead_status)::text,
               'timestamp', NOW(),
-              'note', $3
+              'note', $3::text
             )
           ),
 
         updated_at = NOW()
 
-      WHERE id = $1
+      WHERE id = $1::uuid
 
       RETURNING
         id,
@@ -241,15 +241,15 @@ export async function updateBulkLeadStatus(
       `
         UPDATE leads
         SET
-          status = $2,
+          status = $2::lead_status,
 
           lead_journey =
             lead_journey ||
             jsonb_build_array(
               jsonb_build_object(
-                'status', $2,
+                'status', ($2::lead_status)::text,
                 'timestamp', NOW(),
-                'note', $3
+                'note', $3::text
               )
             ),
 
