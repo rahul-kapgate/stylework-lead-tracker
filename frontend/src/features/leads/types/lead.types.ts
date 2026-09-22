@@ -1,11 +1,12 @@
-// src/features/leads/types/lead.types.ts
+export const LEAD_STATUSES = [
+  "NEW",
+  "CONTACTED",
+  "QUALIFIED",
+  "CONVERTED",
+  "LOST",
+] as const;
 
-export type LeadStatus =
-  | "NEW"
-  | "CONTACTED"
-  | "QUALIFIED"
-  | "CONVERTED"
-  | "LOST";
+export type LeadStatus = (typeof LEAD_STATUSES)[number];
 
 export interface LeadJourney {
   status: LeadStatus;
@@ -15,19 +16,12 @@ export interface LeadJourney {
 
 export interface Lead {
   id: string;
-
   name: string;
-
   email: string;
-
   phone: string;
-
   status: LeadStatus;
-
   leadJourney: LeadJourney[];
-
   createdAt: string;
-
   updatedAt: string;
 }
 
@@ -38,12 +32,17 @@ export interface Pagination {
   totalPages: number;
 }
 
-export interface LeadListResponse {
+export interface LeadsResponse {
   success: boolean;
-
   data: Lead[];
-
   pagination: Pagination;
+}
+
+export interface GetLeadsParams {
+  search?: string;
+  status?: LeadStatus;
+  page: number;
+  limit: number;
 }
 
 export interface CreateLeadPayload {
