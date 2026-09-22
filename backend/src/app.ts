@@ -8,6 +8,7 @@ import { env } from "./config/env.js";
 
 import leadRoutes from "./modules/leads/lead.routes.js";
 
+import { notFoundHandler } from "./middleware/notFound.middleware.js";
 import { errorHandler } from "./middleware/error.middleware.js";
 
 const app = express();
@@ -35,6 +36,7 @@ app.get("/health", (_req, res) => {
 
 app.use("/api/leads", leadRoutes);
 
+app.use(notFoundHandler);
 app.use(errorHandler);
 
 export default app;
