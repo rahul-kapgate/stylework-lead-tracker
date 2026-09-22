@@ -168,3 +168,121 @@ export async function updateLeadStatus(
 
   return result.rows[0] ?? null;
 }
+
+export async function createBulkLeads(leads: CreateLeadData[]) {
+  const client = await db.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const createdLeads = [];
+
+    for (const lead of leads) {
+      const result = await client.query(
+        `
+          INSERT INTO leads (
+            name,
+            email,
+            phone,
+            status,
+            lead_journey
+          )
+          VALUES (
+            $1,
+            $2,
+            $3,
+            'NEW',
+            jsonb_build_array(
+              jsonb_build_object(
+                'status', 'NEW',
+                'timestamp', NOW(),
+                'note', 'Lead created'
+              )
+            )
+          )
+          RETURNING
+            id,
+            name,
+            email,
+            phone,
+            status,
+            lead_journey AS "leadJourney",
+            created_at AS "createdAt",
+            updated_at AS "updatedAt"
+        `,
+        [lead.name, lead.email, lead.phone],
+      );
+
+      createdLeads.push(result.rows[0]);
+    }
+
+    await client.query("COMMIT");
+
+    return createdLeads;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateBulkLeadStatus(
+  leadIds: string[],
+  status: LeadStatus,
+  note: string,
+) {
+  const client = await db.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const result = await client.query(
+      `
+        UPDATE leads
+        SET
+          status = $2,
+
+          lead_journey =
+            lead_journey ||
+            jsonb_build_array(
+              jsonb_build_object(
+                'status', $2,
+                'timestamp', NOW(),
+                'note', $3
+              )
+            ),
+
+          updated_at = NOW()
+
+        WHERE id = ANY($1::uuid[])
+
+        RETURNING
+          id,
+          name,
+          email,
+          phone,
+          status,
+          lead_journey AS "leadJourney",
+          created_at AS "createdAt",
+          updated_at AS "updatedAt"
+      `,
+      [leadIds, status, note],
+    );
+
+    if (result.rows.length !== leadIds.length) {
+      await client.query("ROLLBACK");
+
+      return null;
+    }
+
+    await client.query("COMMIT");
+
+    return result.rows;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}

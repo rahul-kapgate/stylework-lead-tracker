@@ -15,6 +15,24 @@ export const createLeadSchema = z.object({
     .max(20, "Phone number is too long"),
 });
 
+export const createBulkLeadsSchema = z.object({
+  leads: z
+    .array(createLeadSchema)
+    .min(1, "At least one lead is required")
+    .max(100, "Maximum 100 leads can be created at once"),
+});
+
+export const bulkUpdateLeadStatusSchema = z.object({
+  leadIds: z
+    .array(z.string().uuid("Invalid lead ID"))
+    .min(1, "At least one lead ID is required")
+    .max(100, "Maximum 100 leads can be updated at once"),
+
+  status: z.enum(LEAD_STATUSES),
+
+  note: z.string().trim().max(500).optional(),
+});
+
 export const updateLeadStatusSchema = z.object({
   status: z.enum(LEAD_STATUSES),
 

@@ -53,3 +53,34 @@ export async function updateLeadStatus(
 
   return lead;
 }
+
+export async function createBulkLeads(
+  leads: CreateLeadData[],
+) {
+  return leadRepository.createBulkLeads(leads);
+}
+
+export async function updateBulkLeadStatus(
+  leadIds: string[],
+  status: LeadStatus,
+  note?: string,
+) {
+  const journeyNote =
+    note || `Lead status changed to ${status}`;
+
+  const leads =
+    await leadRepository.updateBulkLeadStatus(
+      leadIds,
+      status,
+      journeyNote,
+    );
+
+  if (!leads) {
+    throw new AppError(
+      "One or more leads were not found",
+      404,
+    );
+  }
+
+  return leads;
+}
