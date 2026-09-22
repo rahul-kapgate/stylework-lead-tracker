@@ -1,30 +1,31 @@
+// src/features/leads/components/AddLeadDialog.tsx
+
 import { useEffect, useState } from "react";
+
+import { Controller, useForm } from "react-hook-form";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { useForm } from "react-hook-form";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { Loader2, Plus, UserPlus } from "lucide-react";
+import { Loader2, Mail, Plus, UserRound } from "lucide-react";
 
-import { z } from "zod";
+import { PhoneInput } from "react-international-phone";
 
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 
+import { Input } from "@/components/ui/input";
+
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
-import { Input } from "@/components/ui/input";
 
 import { getApiErrorMessage } from "@/api/client";
 
@@ -32,31 +33,12 @@ import { createLead } from "../api/lead.api";
 
 import { leadKeys } from "../hooks/useLeads";
 
-const schema = z.object({
-  name: z.string().trim().min(2, "Enter at least 2 characters").max(150),
-
-  email: z.string().trim().email("Enter a valid email address"),
-
-  phone: z
-    .string()
-    .trim()
-    .min(7, "Phone number is too short")
-    .max(20, "Phone number is too long"),
-});
-
-type FormValues = z.infer<typeof schema>;
-
-function FieldError({ message }: { message?: string }) {
-  if (!message) {
-    return null;
-  }
-
-  return (
-    <p role="alert" className="mt-1.5 text-xs font-medium text-rose-600">
-      {message}
-    </p>
-  );
-}
+import {
+  leadFormSchema,
+  LEAD_NAME_MAX_LENGTH,
+  normalizeLeadForm,
+  type LeadFormValues,
+} from "../validation/lead.validation";
 
 export function AddLeadDialog() {
   const [open, setOpen] = useState(false);
@@ -65,13 +47,19 @@ export function AddLeadDialog() {
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     setFocus,
+    watch,
 
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+  } = useForm<LeadFormValues>({
+    resolver: zodResolver(leadFormSchema),
+
+    mode: "onBlur",
+
+    reValidateMode: "onChange",
 
     defaultValues: {
       name: "",
@@ -79,6 +67,8 @@ export function AddLeadDialog() {
       phone: "",
     },
   });
+
+  const name = watch("name");
 
   const mutation = useMutation({
     mutationFn: createLead,
@@ -88,7 +78,9 @@ export function AddLeadDialog() {
         queryKey: leadKeys.all,
       });
 
-      toast.success("Lead created successfully");
+      toast.success("Lead created successfully", {
+        description: "The lead has been added to your pipeline.",
+      });
 
       reset();
 
@@ -114,40 +106,58 @@ export function AddLeadDialog() {
 
   const submitting = mutation.isPending || isSubmitting;
 
+  function handleOpenChange(nextOpen: boolean) {
+    if (submitting) {
+      return;
+    }
+
+    setOpen(nextOpen);
+
+    if (!nextOpen) {
+      reset();
+    }
+  }
+
+  function onSubmit(values: LeadFormValues) {
+    const payload = normalizeLeadForm(values);
+
+    mutation.mutate(payload);
+  }
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(nextOpen) => {
-        if (submitting) {
-          return;
-        }
-
-        setOpen(nextOpen);
-
-        if (!nextOpen) {
-          reset();
-        }
-      }}
-    >
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button
           className="
             h-10
             gap-2
-            rounded-xl
-            bg-indigo-600
+            rounded-lg
+
+            border
+            border-brand-600
+
+            bg-brand-600
+
             px-4
+
+            text-sm
             font-semibold
             text-white
-            shadow-sm
-            shadow-indigo-200/70
+
+            shadow-[0_2px_8px_rgba(11,138,89,0.20)]
+
             transition-all
             duration-200
-            hover:-translate-y-0.5
-            hover:bg-indigo-700
-            hover:shadow-md
-            hover:shadow-indigo-200
-            active:translate-y-0
+
+            hover:border-brand-700
+            hover:bg-brand-700
+
+            hover:shadow-[0_4px_12px_rgba(11,138,89,0.24)]
+
+            active:scale-[0.98]
+
+            focus-visible:ring-4
+            focus-visible:ring-brand-100
           "
         >
           <Plus className="size-4" />
@@ -157,148 +167,360 @@ export function AddLeadDialog() {
 
       <DialogContent
         className="
+          gap-0
+
           overflow-hidden
-          border-slate-200
+
+          rounded-[18px]
+
+          border
+          border-[#D6E4DC]
+
+          bg-[#FBFDFC]
+
           p-0
-          sm:max-w-[520px]
+
+          shadow-[0_24px_80px_rgba(22,55,38,0.18)]
+
+          sm:max-w-[500px]
+
+          [&>button]:rounded-full
+          [&>button]:p-1.5
+          [&>button]:text-[#6B7C73]
+
+          [&>button]:transition-colors
+
+          [&>button:hover]:bg-[#EEF5F1]
+          [&>button:hover]:text-[#17211C]
         "
       >
-        <form onSubmit={handleSubmit((values) => mutation.mutate(values))}>
+        <form noValidate onSubmit={handleSubmit(onSubmit)}>
+          {/* Header */}
           <div
             className="
-              border-b
-              border-slate-100
-              bg-gradient-to-br
-              from-indigo-50/80
-              via-white
-              to-white
-              px-6 py-6
+              px-6
+              pb-5
+              pt-6
             "
           >
-            <DialogHeader>
+            <DialogHeader
+              className="
+                space-y-0
+                text-left
+              "
+            >
               <div
                 className="
-                  mb-3
-                  flex size-10
-                  items-center justify-center
-                  rounded-xl
-                  bg-indigo-600
-                  text-white
-                  shadow-sm
-                  shadow-indigo-200
+                  flex
+                  items-start
+                  gap-3
                 "
               >
-                <UserPlus className="size-5" />
+                <div
+                  className="
+                    flex
+                    size-10
+                    shrink-0
+                    items-center
+                    justify-center
+
+                    rounded-xl
+
+                    bg-brand-50
+                    text-brand-700
+
+                    ring-1
+                    ring-brand-100
+                  "
+                >
+                  <UserRound
+                    className="
+                      size-[18px]
+                    "
+                  />
+                </div>
+
+                <div
+                  className="
+                    pt-0.5
+                  "
+                >
+                  <DialogTitle
+                    className="
+                      text-lg
+                      font-semibold
+
+                      tracking-[-0.02em]
+
+                      text-[#17211C]
+                    "
+                  >
+                    Add new lead
+                  </DialogTitle>
+
+                  <DialogDescription
+                    className="
+                      mt-1
+
+                      text-sm
+                      leading-5
+
+                      text-[#6B7C73]
+                    "
+                  >
+                    Create a new contact in your sales pipeline.
+                  </DialogDescription>
+                </div>
               </div>
 
-              <DialogTitle className="text-xl">Add new lead</DialogTitle>
+              <div
+                className="
+                  mt-4
 
-              <DialogDescription>
-                Add a new contact to your sales pipeline. The lead will start
-                with New status.
-              </DialogDescription>
+                  inline-flex
+                  w-fit
+                  items-center
+                  gap-1.5
+
+                  rounded-full
+
+                  bg-brand-50
+
+                  px-2.5
+                  py-1
+
+                  text-[11px]
+                  font-semibold
+                  text-brand-700
+                "
+              >
+                <span
+                  className="
+                    size-1.5
+                    rounded-full
+                    bg-brand-500
+                  "
+                />
+                Starts as New
+              </div>
             </DialogHeader>
           </div>
 
-          <div className="space-y-5 px-6 py-6">
-            <div>
-              <label
-                htmlFor="lead-name"
+          <div
+            className="
+              h-px
+              bg-[#E5EEE9]
+            "
+          />
+
+          {/* Form body */}
+          <div
+            className="
+              space-y-5
+
+              bg-[#FBFDFC]
+
+              px-6
+              py-6
+            "
+          >
+            {/* Name */}
+            <FormField
+              label="Full name"
+              required
+              error={errors.name?.message}
+              helper={`${name.length}/${LEAD_NAME_MAX_LENGTH}`}
+            >
+              <div
                 className="
-                  mb-2 block
-                  text-sm font-medium
-                  text-slate-700
+                  relative
                 "
               >
-                Full name
-              </label>
+                <UserRound
+                  className="
+                    pointer-events-none
 
-              <Input
-                id="lead-name"
-                autoComplete="name"
-                placeholder="e.g. Rahul Kapgate"
+                    absolute
+                    left-3.5
+                    top-1/2
+
+                    size-4
+
+                    -translate-y-1/2
+
+                    text-[#91A098]
+                  "
+                />
+
+                <Input
+                  autoComplete="name"
+                  maxLength={LEAD_NAME_MAX_LENGTH}
+                  placeholder="e.g. Rahul Kapgate"
+                  aria-invalid={Boolean(errors.name)}
+                  className="
+                    h-11
+
+                    rounded-lg
+
+                    border-[#DCE8E1]
+
+                    bg-[#F6FAF8]
+
+                    pl-10
+
+                    text-sm
+                    text-[#17211C]
+
+                    shadow-none
+
+                    transition-all
+                    duration-200
+
+                    placeholder:text-[#91A098]
+
+                    hover:border-[#C9DCD1]
+                    hover:bg-white
+
+                    focus-visible:border-brand-500
+                    focus-visible:bg-white
+                    focus-visible:ring-4
+                    focus-visible:ring-brand-50
+
+                    aria-invalid:border-rose-300
+                    aria-invalid:ring-rose-50
+                  "
+                  {...register("name")}
+                />
+              </div>
+            </FormField>
+
+            {/* Email */}
+            <FormField
+              label="Email address"
+              required
+              error={errors.email?.message}
+            >
+              <div
                 className="
-                  h-11 rounded-xl
-                  border-slate-200
-                  bg-white
-                  transition-all
-                  focus-visible:border-indigo-400
-                  focus-visible:ring-indigo-100
-                "
-                {...register("name")}
-              />
-
-              <FieldError message={errors.name?.message} />
-            </div>
-
-            <div>
-              <label
-                htmlFor="lead-email"
-                className="
-                  mb-2 block
-                  text-sm font-medium
-                  text-slate-700
+                  relative
                 "
               >
-                Email address
-              </label>
+                <Mail
+                  className="
+                    pointer-events-none
 
-              <Input
-                id="lead-email"
-                type="email"
-                autoComplete="email"
-                placeholder="name@company.com"
-                className="
-                  h-11 rounded-xl
-                  border-slate-200
-                  bg-white
-                  focus-visible:border-indigo-400
-                  focus-visible:ring-indigo-100
-                "
-                {...register("email")}
+                    absolute
+                    left-3.5
+                    top-1/2
+
+                    size-4
+
+                    -translate-y-1/2
+
+                    text-[#91A098]
+                  "
+                />
+
+                <Input
+                  type="email"
+                  autoComplete="email"
+                  inputMode="email"
+                  maxLength={254}
+                  placeholder="name@company.com"
+                  aria-invalid={Boolean(errors.email)}
+                  className="
+                    h-11
+
+                    rounded-lg
+
+                    border-[#DCE8E1]
+
+                    bg-[#F6FAF8]
+
+                    pl-10
+
+                    text-sm
+                    text-[#17211C]
+
+                    shadow-none
+
+                    transition-all
+                    duration-200
+
+                    placeholder:text-[#91A098]
+
+                    hover:border-[#C9DCD1]
+                    hover:bg-white
+
+                    focus-visible:border-brand-500
+                    focus-visible:bg-white
+                    focus-visible:ring-4
+                    focus-visible:ring-brand-50
+
+                    aria-invalid:border-rose-300
+                    aria-invalid:ring-rose-50
+                  "
+                  {...register("email")}
+                />
+              </div>
+            </FormField>
+
+            {/* Phone */}
+            <FormField
+              label="Phone number"
+              required
+              error={errors.phone?.message}
+              helper="International format"
+            >
+              <Controller
+                name="phone"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <PhoneInput
+                    ref={field.ref}
+                    name={field.name}
+                    value={field.value}
+                    defaultCountry="in"
+                    preferredCountries={["in", "us", "gb", "ae", "sg"]}
+                    forceDialCode
+                    placeholder="Phone number"
+                    onBlur={field.onBlur}
+                    onChange={(phone) => {
+                      field.onChange(phone);
+                    }}
+                    inputProps={{
+                      autoComplete: "tel",
+
+                      inputMode: "tel",
+
+                      "aria-invalid": fieldState.invalid,
+                    }}
+                    className={`
+                      lead-phone-input
+
+                      ${fieldState.invalid ? "lead-phone-input--error" : ""}
+                    `}
+                  />
+                )}
               />
-
-              <FieldError message={errors.email?.message} />
-            </div>
-
-            <div>
-              <label
-                htmlFor="lead-phone"
-                className="
-                  mb-2 block
-                  text-sm font-medium
-                  text-slate-700
-                "
-              >
-                Phone number
-              </label>
-
-              <Input
-                id="lead-phone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                placeholder="+91 98765 43210"
-                className="
-                  h-11 rounded-xl
-                  border-slate-200
-                  bg-white
-                  focus-visible:border-indigo-400
-                  focus-visible:ring-indigo-100
-                "
-                {...register("phone")}
-              />
-
-              <FieldError message={errors.phone?.message} />
-            </div>
+            </FormField>
           </div>
 
-          <DialogFooter
+          {/* Footer */}
+          <div
             className="
+              flex
+              items-center
+              justify-end
+              gap-2.5
+
               border-t
-              border-slate-100
-              bg-slate-50/70
-              px-6 py-4
+              border-[#E5EEE9]
+
+              bg-[#F7FAF8]
+
+              px-6
+              py-4
             "
           >
             <Button
@@ -306,7 +528,39 @@ export function AddLeadDialog() {
               variant="outline"
               disabled={submitting}
               onClick={() => setOpen(false)}
-              className="rounded-xl"
+              className="
+                inline-flex
+                h-10
+                min-w-[92px]
+                items-center
+                justify-center
+
+                rounded-lg
+
+                border-[#D5E2DA]
+
+                bg-white
+
+                px-4
+
+                text-sm
+                font-medium
+                text-[#526158]
+
+                shadow-none
+
+                transition-all
+                duration-150
+
+                hover:border-[#BFD2C6]
+                hover:bg-[#F3F7F5]
+                hover:text-[#17211C]
+
+                active:scale-[0.98]
+
+                focus-visible:ring-4
+                focus-visible:ring-brand-50
+              "
             >
               Cancel
             </Button>
@@ -315,17 +569,51 @@ export function AddLeadDialog() {
               type="submit"
               disabled={submitting}
               className="
-                min-w-[120px]
-                rounded-xl
-                bg-indigo-600
-                hover:bg-indigo-700
+                inline-flex
+                h-10
+                min-w-[132px]
+                items-center
+                justify-center
+                gap-2
+
+                rounded-lg
+
+                border
+                border-brand-600
+
+                bg-brand-600
+
+                px-5
+
+                text-sm
+                font-semibold
+                text-white
+
+                shadow-[0_2px_6px_rgba(11,138,89,0.18)]
+
+                transition-all
+                duration-150
+
+                hover:border-brand-700
+                hover:bg-brand-700
+
+                hover:shadow-[0_4px_10px_rgba(11,138,89,0.22)]
+
+                active:scale-[0.98]
+
+                focus-visible:ring-4
+                focus-visible:ring-brand-100
+
+                disabled:pointer-events-none
+                disabled:opacity-60
+                disabled:shadow-none
               "
             >
               {submitting ? (
                 <>
                   <Loader2
                     className="
-                      mr-2 size-4
+                      size-4
                       animate-spin
                     "
                   />
@@ -335,9 +623,92 @@ export function AddLeadDialog() {
                 "Create lead"
               )}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function FormField({
+  label,
+  required,
+  error,
+  helper,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  error?: string;
+  helper?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div
+        className="
+          mb-2
+
+          flex
+          min-h-[18px]
+          items-center
+          justify-between
+          gap-4
+        "
+      >
+        <label
+          className="
+            text-[13px]
+            font-semibold
+
+            text-[#37483F]
+          "
+        >
+          {label}
+
+          {required && (
+            <span
+              className="
+                ml-0.5
+                text-rose-500
+              "
+            >
+              *
+            </span>
+          )}
+        </label>
+
+        {error ? (
+          <span
+            role="alert"
+            className="
+              max-w-[280px]
+
+              text-right
+              text-[11px]
+              font-medium
+              leading-4
+
+              text-rose-600
+            "
+          >
+            {error}
+          </span>
+        ) : helper ? (
+          <span
+            className="
+              text-[11px]
+              font-medium
+
+              text-[#91A098]
+            "
+          >
+            {helper}
+          </span>
+        ) : null}
+      </div>
+
+      {children}
+    </div>
   );
 }

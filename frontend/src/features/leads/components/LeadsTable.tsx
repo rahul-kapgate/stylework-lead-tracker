@@ -7,7 +7,7 @@ import {
   type GridRowSelectionModel,
 } from "@mui/x-data-grid";
 
-import { CalendarDays, Inbox, Mail, Phone } from "lucide-react";
+import { CalendarDays, Mail, Phone } from "lucide-react";
 
 import { LeadStatusBadge } from "./LeadStatusBadge";
 
@@ -29,21 +29,21 @@ interface LeadsTableProps {
   onPaginationChange: (page: number, limit: number) => void;
 }
 
-function initials(name: string) {
+function getInitials(name: string) {
   return name
     .split(" ")
     .filter(Boolean)
     .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
+    .map((word) => word[0]?.toUpperCase())
     .join("");
 }
 
-function formatDate(value: string) {
+function formatDate(date: string) {
   return new Intl.DateTimeFormat("en-IN", {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(new Date(value));
+  }).format(new Date(date));
 }
 
 export function LeadsTable({
@@ -61,15 +61,17 @@ export function LeadsTable({
       {
         field: "name",
         headerName: "Lead",
-        flex: 1.15,
-        minWidth: 210,
+
+        flex: 1.1,
+        minWidth: 220,
 
         sortable: false,
 
         renderCell: ({ row }) => (
           <div
             className="
-                flex h-full
+                flex
+                h-full
                 min-w-0
                 items-center
                 gap-3
@@ -77,44 +79,48 @@ export function LeadsTable({
           >
             <div
               className="
-                  flex size-9
+                  flex
+                  size-9
                   shrink-0
                   items-center
                   justify-center
-                  rounded-xl
+
+                  rounded-lg
+
                   border
-                  border-indigo-100
-                  bg-indigo-50
+                  border-brand-100
+
+                  bg-brand-50
+
                   text-xs
                   font-bold
-                  tracking-wide
-                  text-indigo-700
+                  text-brand-700
                 "
             >
-              {initials(row.name)}
+              {getInitials(row.name)}
             </div>
 
             <div className="min-w-0">
-              <div
+              <p
                 className="
                     truncate
                     text-sm
                     font-semibold
-                    text-slate-900
+                    text-[#17211C]
                   "
               >
                 {row.name}
-              </div>
+              </p>
 
-              <div
+              <p
                 className="
                     mt-0.5
                     text-xs
-                    text-slate-400
+                    text-[#91A098]
                   "
               >
-                Lead
-              </div>
+                Customer lead
+              </p>
             </div>
           </div>
         ),
@@ -123,25 +129,29 @@ export function LeadsTable({
       {
         field: "email",
         headerName: "Email",
-        flex: 1.35,
-        minWidth: 240,
+
+        flex: 1.25,
+        minWidth: 230,
+
         sortable: false,
 
         renderCell: ({ value }) => (
           <div
             className="
-                flex h-full
-                min-w-0
+                flex
+                h-full
                 items-center
                 gap-2
+
                 text-sm
-                text-slate-600
+                text-[#607168]
               "
           >
             <Mail
               className="
-                  size-4 shrink-0
-                  text-slate-400
+                  size-4
+                  shrink-0
+                  text-[#9AACA2]
                 "
             />
 
@@ -153,21 +163,30 @@ export function LeadsTable({
       {
         field: "phone",
         headerName: "Phone",
-        flex: 0.9,
-        minWidth: 170,
+
+        minWidth: 175,
+        flex: 0.8,
+
         sortable: false,
 
         renderCell: ({ value }) => (
           <div
             className="
-                flex h-full
+                flex
+                h-full
                 items-center
                 gap-2
+
                 text-sm
-                text-slate-600
+                text-[#607168]
               "
           >
-            <Phone className="size-4 text-slate-400" />
+            <Phone
+              className="
+                  size-4
+                  text-[#9AACA2]
+                "
+            />
 
             {String(value)}
           </div>
@@ -177,11 +196,19 @@ export function LeadsTable({
       {
         field: "status",
         headerName: "Status",
+
         width: 145,
+
         sortable: false,
 
         renderCell: ({ row }) => (
-          <div className="flex h-full items-center">
+          <div
+            className="
+                flex
+                h-full
+                items-center
+              "
+          >
             <LeadStatusBadge status={row.status} />
           </div>
         ),
@@ -190,20 +217,29 @@ export function LeadsTable({
       {
         field: "createdAt",
         headerName: "Created",
+
         width: 170,
+
         sortable: false,
 
         renderCell: ({ row }) => (
           <div
             className="
-                flex h-full
+                flex
+                h-full
                 items-center
                 gap-2
+
                 text-sm
-                text-slate-500
+                text-[#6B7C73]
               "
           >
-            <CalendarDays className="size-4 text-slate-400" />
+            <CalendarDays
+              className="
+                  size-4
+                  text-[#9AACA2]
+                "
+            />
 
             {formatDate(row.createdAt)}
           </div>
@@ -213,23 +249,13 @@ export function LeadsTable({
     [],
   );
 
-  function handlePagination(model: GridPaginationModel) {
-    onPaginationChange(model.page + 1, model.pageSize);
-  }
+  const tableHeight = Math.min(Math.max(126 + leads.length * 64, 310), 680);
 
   return (
     <div
-      className="
-        overflow-hidden
-        rounded-2xl
-        border
-        border-slate-200/90
-        bg-white
-        shadow-[0_1px_2px_rgba(15,23,42,0.03),0_6px_24px_rgba(15,23,42,0.04)]
-        transition-shadow
-        duration-300
-        hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_rgba(15,23,42,0.06)]
-      "
+      style={{
+        height: tableHeight,
+      }}
     >
       <DataGrid
         rows={leads}
@@ -242,79 +268,102 @@ export function LeadsTable({
 
           pageSize: limit,
         }}
-        onPaginationModelChange={handlePagination}
-        pageSizeOptions={[10, 20, 50, 100]}
+        onPaginationModelChange={(model: GridPaginationModel) => {
+          onPaginationChange(model.page + 1, model.pageSize);
+        }}
+        pageSizeOptions={[10, 20, 50]}
         checkboxSelection
+        disableRowSelectionOnClick
         rowSelectionModel={selectionModel}
         onRowSelectionModelChange={onSelectionChange}
-        disableRowSelectionOnClick
         disableRowSelectionExcludeModel
         keepNonExistentRowsSelected
-        rowHeight={68}
-        columnHeaderHeight={52}
-        slots={{
-          noRowsOverlay: EmptyLeadsOverlay,
-        }}
+        rowHeight={64}
+        columnHeaderHeight={48}
         slotProps={{
           loadingOverlay: {
             variant: "linear-progress",
+
             noRowsVariant: "skeleton",
           },
         }}
         sx={{
           border: 0,
 
-          minHeight: 420,
-
           fontFamily: "inherit",
 
-          color: "#334155",
+          color: "#37483F",
+
+          backgroundColor: "#FBFDFC",
 
           "& .MuiDataGrid-columnHeaders": {
-            backgroundColor: "#f8faff",
-            borderBottom: "1px solid #e8eaf3",
+            borderBottom: "1px solid #E5EEE9",
+
+            backgroundColor: "#F5F9F7",
           },
 
           "& .MuiDataGrid-columnHeader": {
-            paddingLeft: "16px",
-            paddingRight: "16px",
-            backgroundColor: "#f8faff",
+            paddingLeft: "18px",
+
+            paddingRight: "18px",
+
+            backgroundColor: "#F5F9F7",
           },
 
           "& .MuiDataGrid-columnHeaderTitle": {
-            fontSize: "0.75rem",
+            fontSize: "0.6875rem",
+
             fontWeight: 700,
-            letterSpacing: "0.025em",
+
+            letterSpacing: "0.055em",
+
             textTransform: "uppercase",
-            color: "#64748b",
+
+            color: "#708178",
           },
 
           "& .MuiDataGrid-cell": {
-            borderColor: "#f1f5f9",
-            paddingLeft: "16px",
-            paddingRight: "16px",
+            paddingLeft: "18px",
+
+            paddingRight: "18px",
+
+            borderBottom: "1px solid #EDF3EF",
           },
 
           "& .MuiDataGrid-row": {
-            transition: "background-color 140ms ease",
+            transition: "background-color 120ms ease",
           },
 
           "& .MuiDataGrid-row:hover": {
-            backgroundColor: "#fafaff",
+            backgroundColor: "#F6FAF8",
           },
 
           "& .MuiDataGrid-row.Mui-selected": {
-            backgroundColor: "#eef2ff",
+            backgroundColor: "#EAF8F1",
 
             "&:hover": {
-              backgroundColor: "#e8edff",
+              backgroundColor: "#E2F4EA",
             },
           },
 
+          "& .MuiCheckbox-root": {
+            color: "#B8C9BF",
+          },
+
+          "& .MuiCheckbox-root.Mui-checked": {
+            color: "#0B8A59",
+          },
+
           "& .MuiDataGrid-footerContainer": {
-            minHeight: 58,
-            borderTop: "1px solid #eef2f7",
-            backgroundColor: "#ffffff",
+            minHeight: 56,
+
+            borderTop: "1px solid #E5EEE9",
+
+            backgroundColor: "#F8FBF9",
+          },
+
+          "& .MuiTablePagination-root": {
+            color: "#6B7C73",
           },
 
           "& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within": {
@@ -325,64 +374,8 @@ export function LeadsTable({
             {
               outline: "none",
             },
-
-          "& .MuiDataGrid-virtualScroller": {
-            backgroundColor: "#ffffff",
-          },
         }}
       />
-    </div>
-  );
-}
-
-function EmptyLeadsOverlay() {
-  return (
-    <div
-      className="
-        flex h-full
-        min-h-[300px]
-        flex-col
-        items-center
-        justify-center
-        px-6
-        text-center
-      "
-    >
-      <div
-        className="
-          flex size-12
-          items-center
-          justify-center
-          rounded-2xl
-          bg-indigo-50
-          text-indigo-600
-        "
-      >
-        <Inbox className="size-5" />
-      </div>
-
-      <h3
-        className="
-          mt-4
-          text-sm
-          font-semibold
-          text-slate-900
-        "
-      >
-        No leads found
-      </h3>
-
-      <p
-        className="
-          mt-1
-          max-w-xs
-          text-sm
-          leading-6
-          text-slate-500
-        "
-      >
-        Try adjusting your search or status filter.
-      </p>
     </div>
   );
 }

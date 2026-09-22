@@ -4,10 +4,9 @@ import type { GridRowSelectionModel } from "@mui/x-data-grid";
 
 import { motion, useReducedMotion } from "motion/react";
 
-import { Filter, RefreshCw, Search, Sparkles, Users, X } from "lucide-react";
+import { Filter, RefreshCw, Search, Users, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-
 import { Input } from "@/components/ui/input";
 
 import {
@@ -19,17 +18,15 @@ import {
 } from "@/components/ui/select";
 
 import { AddLeadDialog } from "@/features/leads/components/AddLeadDialog";
-
 import { LeadsTable } from "@/features/leads/components/LeadsTable";
-
 import { useLeads } from "@/features/leads/hooks/useLeads";
 
 import type { LeadStatus } from "@/features/leads/types/lead.types";
 
-const DEBOUNCE_MS = 350;
+const SEARCH_DELAY = 350;
 
 export default function LeadsPage() {
-  const prefersReducedMotion = useReducedMotion();
+  const reduceMotion = useReducedMotion();
 
   const [searchInput, setSearchInput] = useState("");
 
@@ -49,29 +46,27 @@ export default function LeadsPage() {
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       setSearch(searchInput.trim());
-
       setPage(1);
-    }, DEBOUNCE_MS);
+    }, SEARCH_DELAY);
 
-    return () => {
-      window.clearTimeout(timeout);
-    };
+    return () => window.clearTimeout(timeout);
   }, [searchInput]);
 
-  const params = useMemo(
+  const query = useMemo(
     () => ({
       search: search || undefined,
-
       status,
-
       page,
-
       limit,
     }),
     [search, status, page, limit],
   );
 
-  const { data, isLoading, isFetching, isError, refetch } = useLeads(params);
+  const { data, isLoading, isFetching, isError, refetch } = useLeads(query);
+
+  const total = data?.pagination.total ?? 0;
+
+  const leads = data?.data ?? [];
 
   const selectedCount =
     selectionModel.type === "include" ? selectionModel.ids.size : 0;
@@ -85,82 +80,47 @@ export default function LeadsPage() {
     setPage(1);
   }
 
-  function handleStatus(value: string) {
+  function handleStatusChange(value: string) {
     setStatus(value === "ALL" ? undefined : (value as LeadStatus));
 
     setPage(1);
-
-    setSelectionModel({
-      type: "include",
-      ids: new Set(),
-    });
   }
 
   return (
-    <main
-      className="
-        relative
-        min-h-screen
-        overflow-hidden
-        bg-slate-50
-      "
-    >
-      <div
-        aria-hidden
+    <main className="min-h-[calc(100vh-64px)] bg-[#f7f8fc]">
+      <motion.div
+        initial={
+          reduceMotion
+            ? false
+            : {
+                opacity: 0,
+                y: 8,
+              }
+        }
+        animate={{
+          opacity: 1,
+          y: 0,
+        }}
+        transition={{
+          duration: 0.28,
+          ease: [0.22, 1, 0.36, 1],
+        }}
         className="
-          pointer-events-none
-          absolute inset-x-0 top-0
-          h-[420px]
-          bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.12),transparent_40%),radial-gradient(circle_at_top_right,rgba(59,130,246,0.08),transparent_38%)]
-        "
-      />
-
-      <div
-        aria-hidden
-        className="
-          pointer-events-none
-          absolute inset-x-0 top-0
-          h-px
-          bg-gradient-to-r
-          from-transparent
-          via-indigo-300/40
-          to-transparent
-        "
-      />
-
-      <div
-        className="
-          relative
           mx-auto
-          max-w-[1500px]
-          px-4
-          pb-12
-          pt-7
+          max-w-[1440px]
+          px-5
+          py-8
           sm:px-6
           lg:px-8
-          lg:pt-9
+          lg:py-10
         "
       >
-        <motion.header
-          initial={
-            prefersReducedMotion
-              ? false
-              : {
-                  opacity: 0,
-                  y: -8,
-                }
-          }
-          animate={{
-            opacity: 1,
-            y: 0,
-          }}
-          transition={{
-            duration: 0.32,
-            ease: [0.22, 1, 0.36, 1],
-          }}
+        {/* Page heading */}
+        <div
           className="
-            mb-7
-            flex flex-col
+            mb-6
+            flex
+            flex-col
             gap-5
             sm:flex-row
             sm:items-end
@@ -168,221 +128,195 @@ export default function LeadsPage() {
           "
         >
           <div>
-            <div
+            <h1
               className="
-                mb-3
-                inline-flex
-                items-center
-                gap-2
-                rounded-full
-                border
-                border-indigo-100
-                bg-white/80
-                px-2.5 py-1.5
-                text-xs
-                font-semibold
-                text-indigo-700
-                shadow-sm
-                backdrop-blur
+                text-[30px]
+                font-bold
+                tracking-[-0.035em]
+                text-slate-950
               "
             >
-              <span
-                className="
-                  flex size-5
-                  items-center
-                  justify-center
-                  rounded-full
-                  bg-indigo-100
-                "
-              >
-                <img src="/image.png" alt="Logo" className="size-4" />
-              </span>
-              Stylework CRM
-            </div>
+              Leads
+            </h1>
 
-            <div className="flex items-center gap-3">
-              <div
-                className="
-                  hidden size-11
-                  items-center
-                  justify-center
-                  rounded-2xl
-                  bg-gradient-to-br
-                  from-indigo-600
-                  to-indigo-500
-                  text-white
-                  shadow-lg
-                  shadow-indigo-200/60
-                  sm:flex
-                "
-              >
-                <Users className="size-5" />
-              </div>
-
-              <div>
-                <h1
-                  className="
-                    text-2xl
-                    font-bold
-                    tracking-[-0.025em]
-                    text-slate-950
-                    sm:text-3xl
-                  "
-                >
-                  Leads
-                </h1>
-
-                <p
-                  className="
-                    mt-1
-                    text-sm
-                    leading-6
-                    text-slate-500
-                  "
-                >
-                  Manage your pipeline, track conversations and move
-                  opportunities forward.
-                </p>
-              </div>
-            </div>
+            <p
+              className="
+                mt-1.5
+                max-w-2xl
+                text-sm
+                leading-6
+                text-slate-500
+              "
+            >
+              Manage contacts, track progress and move opportunities through
+              your pipeline.
+            </p>
           </div>
 
-          <AddLeadDialog />
-        </motion.header>
-
-        <motion.section
-          initial={
-            prefersReducedMotion
-              ? false
-              : {
-                  opacity: 0,
-                  y: 10,
-                }
-          }
-          animate={{
-            opacity: 1,
-            y: 0,
-          }}
-          transition={{
-            duration: 0.36,
-            delay: 0.05,
-
-            ease: [0.22, 1, 0.36, 1],
-          }}
-        >
           <div
             className="
-              mb-4
-              rounded-2xl
-              border
-              border-slate-200/80
-              bg-white/85
-              p-3
-              shadow-sm
-              backdrop-blur-xl
+              flex
+              items-center
+              gap-4
             "
           >
             <div
               className="
-                flex flex-col
+                hidden
+                items-center
+                gap-1.5
+                text-sm
+                text-slate-500
+                sm:flex
+              "
+            >
+              <span
+                className="
+                  font-semibold
+                  text-slate-900
+                "
+              >
+                {total}
+              </span>
+
+              <span>{total === 1 ? "lead" : "leads"}</span>
+            </div>
+
+            <AddLeadDialog />
+          </div>
+        </div>
+
+        {/* Main leads surface */}
+        <section
+          className="
+            overflow-hidden
+            rounded-2xl
+            border
+            border-slate-200
+            bg-white
+            shadow-[0_1px_2px_rgba(15,23,42,0.03),0_8px_24px_rgba(15,23,42,0.04)]
+          "
+        >
+          {/* Toolbar */}
+          <div
+            className="
+              border-b
+              border-slate-100
+              p-4
+            "
+          >
+            <div
+              className="
+                flex
+                flex-col
                 gap-3
                 lg:flex-row
                 lg:items-center
+                lg:justify-between
               "
             >
-              <div
-                className="
-                  relative
-                  min-w-0
-                  flex-1
-                "
-              >
-                <Search
-                  aria-hidden
-                  className="
-                    absolute
-                    left-3.5
-                    top-1/2
-                    size-4
-                    -translate-y-1/2
-                    text-slate-400
-                  "
-                />
-
-                <Input
-                  value={searchInput}
-                  onChange={(event) => setSearchInput(event.target.value)}
-                  placeholder="Search by name, email or phone..."
-                  aria-label="Search leads"
-                  className="
-                    h-11
-                    rounded-xl
-                    border-slate-200
-                    bg-slate-50/60
-                    pl-10
-                    pr-10
-                    shadow-none
-                    transition-all
-                    duration-200
-                    placeholder:text-slate-400
-                    hover:bg-white
-                    focus-visible:border-indigo-400
-                    focus-visible:bg-white
-                    focus-visible:ring-4
-                    focus-visible:ring-indigo-100
-                  "
-                />
-
-                {searchInput && (
-                  <button
-                    type="button"
-                    aria-label="Clear search"
-                    onClick={() => {
-                      setSearchInput("");
-                      setSearch("");
-                      setPage(1);
-                    }}
-                    className="
-                      absolute
-                      right-2.5
-                      top-1/2
-                      flex size-7
-                      -translate-y-1/2
-                      items-center
-                      justify-center
-                      rounded-lg
-                      text-slate-400
-                      transition
-                      hover:bg-slate-100
-                      hover:text-slate-700
-                      focus-visible:outline-none
-                      focus-visible:ring-2
-                      focus-visible:ring-indigo-500
-                    "
-                  >
-                    <X className="size-3.5" />
-                  </button>
-                )}
-              </div>
-
+              {/* Search + filters */}
               <div
                 className="
                   flex
+                  min-w-0
+                  flex-1
                   flex-col
-                  gap-2
+                  gap-3
                   sm:flex-row
+                  sm:items-center
                 "
               >
-                <Select value={status ?? "ALL"} onValueChange={handleStatus}>
+                <div
+                  className="
+                    relative
+                    w-full
+                    sm:max-w-md
+                  "
+                >
+                  <Search
+                    aria-hidden
+                    className="
+                      pointer-events-none
+                      absolute
+                      left-3
+                      top-1/2
+                      size-4
+                      -translate-y-1/2
+                      text-slate-400
+                    "
+                  />
+
+                  <Input
+                    value={searchInput}
+                    onChange={(event) => setSearchInput(event.target.value)}
+                    placeholder="Search name, email or phone"
+                    aria-label="Search leads"
+                    className="
+                      h-10
+                      rounded-xl
+                      border-slate-200
+                      bg-slate-50/70
+                      pl-9
+                      pr-9
+                      shadow-none
+                      transition-all
+                      duration-200
+                      placeholder:text-slate-400
+                      hover:bg-white
+                      focus-visible:border-indigo-400
+                      focus-visible:bg-white
+                      focus-visible:ring-4
+                      focus-visible:ring-indigo-50
+                    "
+                  />
+
+                  {searchInput && (
+                    <button
+                      type="button"
+                      aria-label="Clear search"
+                      onClick={() => {
+                        setSearchInput("");
+                        setSearch("");
+                        setPage(1);
+                      }}
+                      className="
+                        absolute
+                        right-2
+                        top-1/2
+                        flex
+                        size-7
+                        -translate-y-1/2
+                        items-center
+                        justify-center
+                        rounded-lg
+                        text-slate-400
+                        transition
+                        hover:bg-slate-100
+                        hover:text-slate-700
+                        focus-visible:outline-none
+                        focus-visible:ring-2
+                        focus-visible:ring-indigo-500
+                      "
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                <Select
+                  value={status ?? "ALL"}
+                  onValueChange={handleStatusChange}
+                >
                   <SelectTrigger
                     className="
-                      h-11
+                      h-10
                       w-full
                       rounded-xl
                       border-slate-200
                       bg-white
                       shadow-none
-                      sm:w-[190px]
+                      sm:w-[180px]
                     "
                   >
                     <div className="flex items-center gap-2">
@@ -411,9 +345,10 @@ export default function LeadsPage() {
                   <Button
                     type="button"
                     variant="ghost"
+                    size="sm"
                     onClick={clearFilters}
                     className="
-                      h-11
+                      h-10
                       rounded-xl
                       px-3
                       text-slate-500
@@ -421,144 +356,167 @@ export default function LeadsPage() {
                       hover:text-slate-800
                     "
                   >
-                    Clear
+                    Clear filters
                   </Button>
                 )}
               </div>
-            </div>
 
-            <div
-              className="
-                mt-3
-                flex
-                flex-wrap
-                items-center
-                justify-between
-                gap-2
-                border-t
-                border-slate-100
-                px-1
-                pt-3
-              "
-            >
+              {/* Actions */}
               <div
                 className="
                   flex
                   items-center
-                  gap-2
-                  text-xs
-                  text-slate-500
+                  gap-3
                 "
               >
-                <span
+                {selectedCount > 0 && (
+                  <div
+                    className="
+                      inline-flex
+                      h-9
+                      items-center
+                      rounded-lg
+                      bg-indigo-50
+                      px-3
+                      text-xs
+                      font-semibold
+                      text-indigo-700
+                    "
+                  >
+                    {selectedCount} selected
+                  </div>
+                )}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isFetching}
+                  onClick={() => void refetch()}
                   className="
-                    font-semibold
-                    text-slate-700
+                    h-10
+                    gap-2
+                    rounded-xl
+                    border-slate-200
+                    bg-white
+                    px-3
+                    text-slate-600
+                    shadow-none
+                    transition
+                    hover:bg-slate-50
+                    hover:text-slate-900
                   "
                 >
-                  {data?.pagination.total ?? 0}
-                </span>
+                  <RefreshCw
+                    className={`
+                      size-3.5
+                      ${isFetching ? "animate-spin" : ""}
+                    `}
+                  />
 
-                {data?.pagination.total === 1 ? "lead" : "leads"}
-
-                {selectedCount > 0 && (
-                  <>
-                    <span className="text-slate-300">•</span>
-
-                    <span
-                      className="
-                        font-semibold
-                        text-indigo-600
-                      "
-                    >
-                      {selectedCount} selected
-                    </span>
-                  </>
-                )}
+                  <span className="hidden sm:inline">Refresh</span>
+                </Button>
               </div>
-
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={isFetching}
-                onClick={() => void refetch()}
-                className="
-                  h-8
-                  gap-1.5
-                  rounded-lg
-                  text-xs
-                  text-slate-500
-                  hover:text-indigo-700
-                "
-              >
-                <RefreshCw
-                  className={`
-                    size-3.5
-                    ${isFetching ? "animate-spin" : ""}
-                  `}
-                />
-                Refresh
-              </Button>
             </div>
           </div>
 
+          {/* Content */}
           {isError ? (
             <ErrorState onRetry={() => void refetch()} />
+          ) : leads.length === 0 && !isLoading ? (
+            <EmptyState hasFilters={hasFilters} onClear={clearFilters} />
           ) : (
-            <div className="relative">
-              {isFetching && !isLoading && (
-                <div
-                  className="
-                      absolute
-                      left-4
-                      right-4
-                      top-0
-                      z-20
-                      h-[2px]
-                      overflow-hidden
-                      rounded-full
-                      bg-indigo-100
-                    "
-                >
-                  <motion.div
-                    className="
-                        h-full
-                        w-1/3
-                        rounded-full
-                        bg-indigo-600
-                      "
-                    animate={{
-                      x: ["-100%", "400%"],
-                    }}
-                    transition={{
-                      duration: 1.1,
-                      repeat: Infinity,
-                      ease: "linear",
-                    }}
-                  />
-                </div>
-              )}
-
-              <LeadsTable
-                leads={data?.data ?? []}
-                total={data?.pagination.total ?? 0}
-                page={data?.pagination.page ?? page}
-                limit={data?.pagination.limit ?? limit}
-                loading={isLoading}
-                selectionModel={selectionModel}
-                onSelectionChange={setSelectionModel}
-                onPaginationChange={(newPage, newLimit) => {
-                  setPage(newPage);
-
-                  setLimit(newLimit);
-                }}
-              />
-            </div>
+            <LeadsTable
+              leads={leads}
+              total={total}
+              page={data?.pagination.page ?? page}
+              limit={data?.pagination.limit ?? limit}
+              loading={isLoading}
+              selectionModel={selectionModel}
+              onSelectionChange={setSelectionModel}
+              onPaginationChange={(newPage, newLimit) => {
+                setPage(newPage);
+                setLimit(newLimit);
+              }}
+            />
           )}
-        </motion.section>
-      </div>
+        </section>
+      </motion.div>
     </main>
+  );
+}
+
+function EmptyState({
+  hasFilters,
+  onClear,
+}: {
+  hasFilters: boolean;
+  onClear: () => void;
+}) {
+  return (
+    <div
+      className="
+        flex
+        min-h-[320px]
+        flex-col
+        items-center
+        justify-center
+        px-6
+        text-center
+      "
+    >
+      <div
+        className="
+          flex
+          size-12
+          items-center
+          justify-center
+          rounded-2xl
+          bg-indigo-50
+          text-indigo-600
+        "
+      >
+        <Users className="size-5" />
+      </div>
+
+      <h3
+        className="
+          mt-4
+          text-base
+          font-semibold
+          text-slate-900
+        "
+      >
+        {hasFilters ? "No matching leads" : "No leads yet"}
+      </h3>
+
+      <p
+        className="
+          mt-1
+          max-w-sm
+          text-sm
+          leading-6
+          text-slate-500
+        "
+      >
+        {hasFilters
+          ? "Try changing your search or status filter."
+          : "Create your first lead to start building your pipeline."}
+      </p>
+
+      {hasFilters && (
+        <Button
+          variant="outline"
+          onClick={onClear}
+          className="
+            mt-5
+            rounded-xl
+          "
+        >
+          Clear filters
+        </Button>
+      )}
+    </div>
   );
 }
 
@@ -566,22 +524,22 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
     <div
       className="
-        rounded-2xl
-        border
-        border-rose-200
-        bg-white
-        px-6 py-14
+        flex
+        min-h-[320px]
+        flex-col
+        items-center
+        justify-center
+        px-6
         text-center
-        shadow-sm
       "
     >
       <div
         className="
-          mx-auto
-          flex size-11
+          flex
+          size-12
           items-center
           justify-center
-          rounded-xl
+          rounded-2xl
           bg-rose-50
           text-rose-600
         "
@@ -596,34 +554,27 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
           text-slate-900
         "
       >
-        We couldn't load your leads
+        Unable to load leads
       </h3>
 
       <p
         className="
-          mx-auto
           mt-1
-          max-w-md
           text-sm
-          leading-6
           text-slate-500
         "
       >
-        There may be a temporary connection problem. Your data hasn't been
-        changed.
+        Check your connection and try again.
       </p>
 
       <Button
-        type="button"
         variant="outline"
         onClick={onRetry}
         className="
           mt-5
-          gap-2
           rounded-xl
         "
       >
-        <RefreshCw className="size-4" />
         Try again
       </Button>
     </div>

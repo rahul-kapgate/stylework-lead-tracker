@@ -1,7 +1,13 @@
 import LeadsPage from "@/pages/LeadsPage";
+import { AppHeader } from "@/components/AppHeader";
 
 function App() {
-  return <LeadsPage />;
+  return (
+    <>
+      <AppHeader />
+      <LeadsPage />
+    </>
+  );
 }
 
 export default App;

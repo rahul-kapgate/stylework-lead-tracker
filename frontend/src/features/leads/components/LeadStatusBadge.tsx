@@ -4,74 +4,77 @@ interface LeadStatusBadgeProps {
   status: LeadStatus;
 }
 
-const styles: Record<
+const statusConfig: Record<
   LeadStatus,
   {
-    dot: string;
-    container: string;
     label: string;
+    dot: string;
+    className: string;
   }
 > = {
   NEW: {
+    label: "New",
     dot: "bg-blue-500",
 
-    container: "border-blue-200 bg-blue-50/80 text-blue-700",
-
-    label: "New",
+    className: "border-blue-200 bg-blue-50 text-blue-700",
   },
 
   CONTACTED: {
+    label: "Contacted",
     dot: "bg-amber-500",
 
-    container: "border-amber-200 bg-amber-50/80 text-amber-700",
-
-    label: "Contacted",
+    className: "border-amber-200 bg-amber-50 text-amber-700",
   },
 
   QUALIFIED: {
+    label: "Qualified",
     dot: "bg-violet-500",
 
-    container: "border-violet-200 bg-violet-50/80 text-violet-700",
-
-    label: "Qualified",
+    className: "border-violet-200 bg-violet-50 text-violet-700",
   },
 
   CONVERTED: {
+    label: "Converted",
     dot: "bg-emerald-500",
 
-    container: "border-emerald-200 bg-emerald-50/80 text-emerald-700",
-
-    label: "Converted",
+    className: "border-emerald-200 bg-emerald-50 text-emerald-700",
   },
 
   LOST: {
+    label: "Lost",
     dot: "bg-rose-500",
 
-    container: "border-rose-200 bg-rose-50/80 text-rose-700",
-
-    label: "Lost",
+    className: "border-rose-200 bg-rose-50 text-rose-700",
   },
 };
 
 export function LeadStatusBadge({ status }: LeadStatusBadgeProps) {
-  const config = styles[status];
+  const config = statusConfig[status];
 
   return (
     <span
       className={`
-        inline-flex items-center
+        inline-flex
+        items-center
         gap-1.5
+
         rounded-full
         border
-        px-2.5 py-1
-        text-xs font-semibold
-        ${config.container}
+
+        px-2.5
+        py-1
+
+        text-xs
+        font-semibold
+
+        ${config.className}
       `}
     >
       <span
         aria-hidden
         className={`
-          size-1.5 rounded-full
+          size-1.5
+          rounded-full
           ${config.dot}
         `}
       />

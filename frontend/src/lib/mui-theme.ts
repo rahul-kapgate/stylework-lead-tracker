@@ -5,22 +5,22 @@ export const muiTheme = createTheme({
     mode: "light",
 
     primary: {
-      main: "#4f46e5",
-      dark: "#4338ca",
-      light: "#818cf8",
+      main: "#0B8A59",
+      dark: "#087149",
+      light: "#3BB47F",
     },
 
     background: {
-      default: "#f8fafc",
-      paper: "#ffffff",
+      default: "#F3F8F5",
+      paper: "#FBFDFC",
     },
 
     text: {
-      primary: "#0f172a",
-      secondary: "#64748b",
+      primary: "#17211C",
+      secondary: "#6B7C73",
     },
 
-    divider: "#e2e8f0",
+    divider: "#DCE8E1",
   },
 
   typography: {
@@ -29,21 +29,22 @@ export const muiTheme = createTheme({
 
     button: {
       textTransform: "none",
+      fontWeight: 600,
     },
   },
 
   shape: {
-    borderRadius: 12,
+    borderRadius: 10,
   },
 
   components: {
     MuiCheckbox: {
       styleOverrides: {
         root: {
-          color: "#cbd5e1",
+          color: "#B8C9BF",
 
           "&.Mui-checked": {
-            color: "#4f46e5",
+            color: "#0B8A59",
           },
         },
       },

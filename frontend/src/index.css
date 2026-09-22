@@ -4,12 +4,33 @@
   --font-sans:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
+
+  /* Brand */
+  --color-brand-50: #eaf8f1;
+  --color-brand-100: #d8f2e5;
+  --color-brand-200: #afe4cb;
+  --color-brand-300: #78cfa9;
+  --color-brand-400: #3bb47f;
+  --color-brand-500: #149b65;
+  --color-brand-600: #0b8a59;
+  --color-brand-700: #087149;
+  --color-brand-800: #075a3d;
+  --color-brand-900: #064a34;
+
+  /* Application */
+  --color-app-bg: #f3f8f5;
+  --color-app-surface: #fbfdfc;
+  --color-app-muted-surface: #f6faf8;
+  --color-app-border: #dce8e1;
+  --color-app-text: #17211c;
+  --color-app-muted: #6b7c73;
 }
 
 :root {
   font-family: var(--font-sans);
-  color: #0f172a;
-  background: #f8fafc;
+
+  color: #17211c;
+  background: #f3f8f5;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -30,9 +51,12 @@ html {
 
 body {
   margin: 0;
+
   min-width: 320px;
   min-height: 100vh;
-  background: #f8fafc;
+
+  background: #f3f8f5;
+  color: #17211c;
 }
 
 button,
@@ -47,8 +71,8 @@ button {
 }
 
 ::selection {
-  background: #c7d2fe;
-  color: #312e81;
+  background: #d8f2e5;
+  color: #064a34;
 }
 
 ::-webkit-scrollbar {
@@ -63,11 +87,181 @@ button {
 ::-webkit-scrollbar-thumb {
   border: 3px solid transparent;
   border-radius: 999px;
-  background: #cbd5e1;
+
+  background: #bfd0c6;
   background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #94aa9d;
   background-clip: padding-box;
+}
+
+
+/* -------------------------------------------------------
+   International phone input
+------------------------------------------------------- */
+
+.lead-phone-input.react-international-phone-input-container {
+  width: 100%;
+
+  --react-international-phone-height: 44px;
+  --react-international-phone-background-color: #f6faf8;
+  --react-international-phone-text-color: #17211c;
+  --react-international-phone-font-size: 14px;
+  --react-international-phone-border-color: #dce8e1;
+  --react-international-phone-border-radius: 8px;
+}
+
+/* Input container */
+.lead-phone-input {
+  width: 100%;
+}
+
+/* Actual phone field */
+.lead-phone-input
+  .react-international-phone-input {
+  flex: 1;
+
+  width: 100%;
+
+  height: 44px !important;
+
+  border: 1px solid #dce8e1 !important;
+
+  border-left: 0 !important;
+
+  border-radius: 0 8px 8px 0 !important;
+
+  background: #f6faf8 !important;
+
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+
+  color: #17211c !important;
+
+  font-size: 14px !important;
+
+  box-shadow: none !important;
+
+  outline: none !important;
+
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.lead-phone-input
+  .react-international-phone-input::placeholder {
+  color: #91a098 !important;
+}
+
+/* Country selector */
+.lead-phone-input
+  .react-international-phone-country-selector-button {
+  width: 64px !important;
+
+  height: 44px !important;
+
+  border: 1px solid #dce8e1 !important;
+
+  border-radius: 8px 0 0 8px !important;
+
+  background: #edf5f1 !important;
+
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+
+.lead-phone-input
+  .react-international-phone-country-selector-button:hover {
+  background: #e7f1eb !important;
+}
+
+/* Selected flag */
+.lead-phone-input
+  .react-international-phone-country-selector-button__flag-emoji {
+  margin: 0;
+}
+
+/* Focus */
+.lead-phone-input:focus-within
+  .react-international-phone-country-selector-button {
+  border-color: #149b65 !important;
+}
+
+.lead-phone-input:focus-within
+  .react-international-phone-input {
+  border-color: #149b65 !important;
+
+  box-shadow:
+    0 0 0 4px #eaf8f1 !important;
+
+  background: #ffffff !important;
+}
+
+/* Validation error */
+.lead-phone-input--error
+  .react-international-phone-country-selector-button {
+  border-color: #fda4af !important;
+}
+
+.lead-phone-input--error
+  .react-international-phone-input {
+  border-color: #fda4af !important;
+
+  box-shadow:
+    0 0 0 4px #fff1f2 !important;
+}
+
+/* Country dropdown */
+.react-international-phone-country-selector-dropdown {
+  z-index: 100 !important;
+
+  max-height: 280px !important;
+
+  margin-top: 6px !important;
+
+  overflow-y: auto !important;
+
+  border: 1px solid #dce8e1 !important;
+
+  border-radius: 10px !important;
+
+  background: #ffffff !important;
+
+  padding: 5px !important;
+
+  box-shadow:
+    0 12px 32px
+    rgba(23, 33, 28, 0.14) !important;
+}
+
+/* Country option */
+.react-international-phone-country-selector-dropdown__list-item {
+  min-height: 38px !important;
+
+  border-radius: 7px !important;
+
+  padding: 7px 9px !important;
+
+  color: #37483f !important;
+
+  font-size: 13px !important;
+}
+
+/* Hovered option */
+.react-international-phone-country-selector-dropdown__list-item:hover {
+  background: #f3f8f5 !important;
+}
+
+/* Selected country */
+.react-international-phone-country-selector-dropdown__list-item--selected {
+  background: #eaf8f1 !important;
+
+  color: #087149 !important;
+
+  font-weight: 600 !important;
 }

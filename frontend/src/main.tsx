@@ -12,16 +12,14 @@ import { muiTheme } from "@/lib/mui-theme";
 import App from "./App";
 
 import "./index.css";
+import "react-international-phone/style.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
-
-      retry: (failureCount) => failureCount < 2,
-
+      retry: 1,
       refetchOnWindowFocus: false,
-
       refetchOnReconnect: true,
     },
 
