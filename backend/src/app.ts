@@ -3,8 +3,12 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import pinoHttp from "pino-http";
+import { pinoHttp}  from "pino-http";
 import { env } from "./config/env.js";
+
+import leadRoutes from "./modules/leads/lead.routes.js";
+
+import { errorHandler } from "./middleware/error.middleware.js";
 
 const app = express();
 
@@ -26,5 +30,9 @@ app.get("/health", (_req, res) => {
     message: "Lead Tracker API is running",
   });
 });
+
+app.use("/api/leads", leadRoutes);
+
+app.use(errorHandler);
 
 export default app;
