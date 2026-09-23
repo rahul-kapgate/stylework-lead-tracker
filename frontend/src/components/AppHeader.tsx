@@ -84,7 +84,7 @@ export function AppHeader() {
               text-[#17211C]
             "
           >
-            Stylework
+            Stylework Lead Tracker
           </span>
         </a>
       </div>

@@ -168,28 +168,18 @@ export function AddLeadDialog() {
       <DialogContent
         className="
           gap-0
-
-          overflow-hidden
-
+          overflow-visible
           rounded-[18px]
-
           border
           border-[#D6E4DC]
-
           bg-[#FBFDFC]
-
           p-0
-
           shadow-[0_24px_80px_rgba(22,55,38,0.18)]
-
           sm:max-w-[500px]
-
           [&>button]:rounded-full
           [&>button]:p-1.5
           [&>button]:text-[#6B7C73]
-
           [&>button]:transition-colors
-
           [&>button:hover]:bg-[#EEF5F1]
           [&>button:hover]:text-[#17211C]
         "
@@ -198,10 +188,12 @@ export function AddLeadDialog() {
           {/* Header */}
           <div
             className="
-              px-6
-              pb-5
-              pt-6
-            "
+    rounded-t-[17px]
+    bg-[#FBFDFC]
+    px-6
+    pb-5
+    pt-6
+  "
           >
             <DialogHeader
               className="
@@ -509,19 +501,21 @@ export function AddLeadDialog() {
           {/* Footer */}
           <div
             className="
-              flex
-              items-center
-              justify-end
-              gap-2.5
+    flex
+    items-center
+    justify-end
+    gap-2.5
 
-              border-t
-              border-[#E5EEE9]
+    rounded-b-[17px]
 
-              bg-[#F7FAF8]
+    border-t
+    border-[#E5EEE9]
 
-              px-6
-              py-4
-            "
+    bg-[#F7FAF8]
+
+    px-6
+    py-4
+  "
           >
             <Button
               type="button"

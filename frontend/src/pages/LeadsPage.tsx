@@ -4,10 +4,9 @@ import type { GridRowSelectionModel } from "@mui/x-data-grid";
 
 import { motion, useReducedMotion } from "motion/react";
 
-import { Filter, RefreshCw, Search, Users, X } from "lucide-react";
+import { Filter, RefreshCw, Users, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 import {
   Select,
@@ -18,10 +17,21 @@ import {
 } from "@/components/ui/select";
 
 import { AddLeadDialog } from "@/features/leads/components/AddLeadDialog";
+
+import { LeadsSearch } from "@/features/leads/components/LeadsSearch";
+
 import { LeadsTable } from "@/features/leads/components/LeadsTable";
+
+import { useDebouncedValue } from "@/features/leads/hooks/useDebouncedValue";
+
 import { useLeads } from "@/features/leads/hooks/useLeads";
 
 import type { LeadStatus } from "@/features/leads/types/lead.types";
+
+import {
+  normalizeLeadSearch,
+  validateLeadSearch,
+} from "@/features/leads/validation/leadSearch";
 
 const SEARCH_DELAY = 350;
 
@@ -29,6 +39,8 @@ export default function LeadsPage() {
   const reduceMotion = useReducedMotion();
 
   const [searchInput, setSearchInput] = useState("");
+
+  const debouncedSearch = useDebouncedValue(searchInput, SEARCH_DELAY);
 
   const [search, setSearch] = useState("");
 
@@ -43,20 +55,51 @@ export default function LeadsPage() {
     ids: new Set(),
   });
 
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      setSearch(searchInput.trim());
-      setPage(1);
-    }, SEARCH_DELAY);
+  /*
+   * Validate the debounced search.
+   *
+   * We validate the debounced value instead
+   * of every single key press so the user
+   * doesn't immediately see an error after
+   * typing one character.
+   */
+  const searchError = validateLeadSearch(debouncedSearch);
 
-    return () => window.clearTimeout(timeout);
-  }, [searchInput]);
+  /*
+   * Update actual API search only when:
+   *
+   * 1. debounce completes
+   * 2. input is valid
+   *
+   * Page resets to 1 whenever the
+   * search changes.
+   */
+  useEffect(() => {
+    if (searchError) {
+      return;
+    }
+
+    const normalized = normalizeLeadSearch(debouncedSearch);
+
+    setSearch((current) => {
+      if (current === normalized) {
+        return current;
+      }
+
+      setPage(1);
+
+      return normalized;
+    });
+  }, [debouncedSearch, searchError]);
 
   const query = useMemo(
     () => ({
       search: search || undefined,
+
       status,
+
       page,
+
       limit,
     }),
     [search, status, page, limit],
@@ -71,13 +114,33 @@ export default function LeadsPage() {
   const selectedCount =
     selectionModel.type === "include" ? selectionModel.ids.size : 0;
 
-  const hasFilters = Boolean(searchInput) || Boolean(status);
+  const hasFilters = Boolean(search) || Boolean(status);
+
+  /*
+   * Search spinner appears when:
+   *
+   * - debounce has finished
+   * - valid search exists
+   * - React Query is fetching
+   */
+  const isSearching = Boolean(search) && isFetching;
 
   function clearFilters() {
     setSearchInput("");
+
     setSearch("");
+
     setStatus(undefined);
+
     setPage(1);
+  }
+
+  function handleSearchChange(value: string) {
+    /*
+     * Prevent more than 80 chars
+     * even if something is pasted.
+     */
+    setSearchInput(value.slice(0, 80));
   }
 
   function handleStatusChange(value: string) {
@@ -87,7 +150,12 @@ export default function LeadsPage() {
   }
 
   return (
-    <main className="min-h-[calc(100vh-64px)] bg-[#f7f8fc]">
+    <main
+      className="
+        min-h-[calc(100vh-64px)]
+        bg-[#f7f8fc]
+      "
+    >
       <motion.div
         initial={
           reduceMotion
@@ -108,20 +176,26 @@ export default function LeadsPage() {
         className="
           mx-auto
           max-w-[1440px]
+
           px-5
           py-8
+
           sm:px-6
+
           lg:px-8
           lg:py-10
         "
       >
-        {/* Page heading */}
+        {/* Heading */}
+
         <div
           className="
             mb-6
+
             flex
             flex-col
             gap-5
+
             sm:flex-row
             sm:items-end
             sm:justify-between
@@ -142,7 +216,9 @@ export default function LeadsPage() {
             <p
               className="
                 mt-1.5
+
                 max-w-2xl
+
                 text-sm
                 leading-6
                 text-slate-500
@@ -165,8 +241,10 @@ export default function LeadsPage() {
                 hidden
                 items-center
                 gap-1.5
+
                 text-sm
                 text-slate-500
+
                 sm:flex
               "
             >
@@ -186,22 +264,29 @@ export default function LeadsPage() {
           </div>
         </div>
 
-        {/* Main leads surface */}
+        {/* Main card */}
+
         <section
           className="
             overflow-hidden
+
             rounded-2xl
+
             border
             border-slate-200
+
             bg-white
+
             shadow-[0_1px_2px_rgba(15,23,42,0.03),0_8px_24px_rgba(15,23,42,0.04)]
           "
         >
           {/* Toolbar */}
+
           <div
             className="
               border-b
               border-slate-100
+
               p-4
             "
           >
@@ -210,12 +295,14 @@ export default function LeadsPage() {
                 flex
                 flex-col
                 gap-3
+
                 lg:flex-row
-                lg:items-center
+                lg:items-start
                 lg:justify-between
               "
             >
-              {/* Search + filters */}
+              {/* Search + Filters */}
+
               <div
                 className="
                   flex
@@ -223,85 +310,24 @@ export default function LeadsPage() {
                   flex-1
                   flex-col
                   gap-3
+
                   sm:flex-row
-                  sm:items-center
+                  sm:items-start
                 "
               >
                 <div
                   className="
-                    relative
                     w-full
+
                     sm:max-w-md
                   "
                 >
-                  <Search
-                    aria-hidden
-                    className="
-                      pointer-events-none
-                      absolute
-                      left-3
-                      top-1/2
-                      size-4
-                      -translate-y-1/2
-                      text-slate-400
-                    "
-                  />
-
-                  <Input
+                  <LeadsSearch
                     value={searchInput}
-                    onChange={(event) => setSearchInput(event.target.value)}
-                    placeholder="Search name, email or phone"
-                    aria-label="Search leads"
-                    className="
-                      h-10
-                      rounded-xl
-                      border-slate-200
-                      bg-slate-50/70
-                      pl-9
-                      pr-9
-                      shadow-none
-                      transition-all
-                      duration-200
-                      placeholder:text-slate-400
-                      hover:bg-white
-                      focus-visible:border-indigo-400
-                      focus-visible:bg-white
-                      focus-visible:ring-4
-                      focus-visible:ring-indigo-50
-                    "
+                    onChange={handleSearchChange}
+                    error={searchError}
+                    isSearching={isSearching}
                   />
-
-                  {searchInput && (
-                    <button
-                      type="button"
-                      aria-label="Clear search"
-                      onClick={() => {
-                        setSearchInput("");
-                        setSearch("");
-                        setPage(1);
-                      }}
-                      className="
-                        absolute
-                        right-2
-                        top-1/2
-                        flex
-                        size-7
-                        -translate-y-1/2
-                        items-center
-                        justify-center
-                        rounded-lg
-                        text-slate-400
-                        transition
-                        hover:bg-slate-100
-                        hover:text-slate-700
-                        focus-visible:outline-none
-                        focus-visible:ring-2
-                        focus-visible:ring-indigo-500
-                      "
-                    >
-                      <X className="size-3.5" />
-                    </button>
-                  )}
                 </div>
 
                 <Select
@@ -310,34 +336,129 @@ export default function LeadsPage() {
                 >
                   <SelectTrigger
                     className="
-                      h-10
-                      w-full
-                      rounded-xl
-                      border-slate-200
-                      bg-white
-                      shadow-none
-                      sm:w-[180px]
-                    "
+      h-10
+      w-full
+      rounded-xl
+      border-slate-200
+      bg-white
+      shadow-none
+      transition-colors
+      hover:bg-slate-50
+      focus:ring-2
+      focus:ring-emerald-100
+      sm:w-[180px]
+    "
                   >
                     <div className="flex items-center gap-2">
-                      <Filter className="size-4 text-slate-400" />
+                      <Filter className="size-4 shrink-0 text-slate-400" />
 
-                      <SelectValue />
+                      <SelectValue placeholder="All statuses" />
                     </div>
                   </SelectTrigger>
 
-                  <SelectContent>
-                    <SelectItem value="ALL">All statuses</SelectItem>
+                  <SelectContent
+                    position="popper"
+                    sideOffset={6}
+                    align="start"
+                    className="
+      w-[180px]
+      rounded-xl
+      border
+      border-slate-200
+      bg-white
+      p-1
+      shadow-lg
+    "
+                  >
+                    <SelectItem
+                      value="ALL"
+                      className="
+        h-9
+        cursor-pointer
+        rounded-lg
+        px-3
+        text-sm
+        focus:bg-emerald-50
+        focus:text-emerald-800
+      "
+                    >
+                      All statuses
+                    </SelectItem>
 
-                    <SelectItem value="NEW">New</SelectItem>
+                    <SelectItem
+                      value="NEW"
+                      className="
+        h-9
+        cursor-pointer
+        rounded-lg
+        px-3
+        text-sm
+        focus:bg-emerald-50
+        focus:text-emerald-800
+      "
+                    >
+                      New
+                    </SelectItem>
 
-                    <SelectItem value="CONTACTED">Contacted</SelectItem>
+                    <SelectItem
+                      value="CONTACTED"
+                      className="
+        h-9
+        cursor-pointer
+        rounded-lg
+        px-3
+        text-sm
+        focus:bg-emerald-50
+        focus:text-emerald-800
+      "
+                    >
+                      Contacted
+                    </SelectItem>
 
-                    <SelectItem value="QUALIFIED">Qualified</SelectItem>
+                    <SelectItem
+                      value="QUALIFIED"
+                      className="
+        h-9
+        cursor-pointer
+        rounded-lg
+        px-3
+        text-sm
+        focus:bg-emerald-50
+        focus:text-emerald-800
+      "
+                    >
+                      Qualified
+                    </SelectItem>
 
-                    <SelectItem value="CONVERTED">Converted</SelectItem>
+                    <SelectItem
+                      value="CONVERTED"
+                      className="
+        h-9
+        cursor-pointer
+        rounded-lg
+        px-3
+        text-sm
+        focus:bg-emerald-50
+        focus:text-emerald-800
+      "
+                    >
+                      Converted
+                    </SelectItem>
 
-                    <SelectItem value="LOST">Lost</SelectItem>
+                    <SelectItem
+                      value="LOST"
+                      className="
+        h-9
+        cursor-pointer
+        rounded-lg
+        px-3
+        text-sm
+        focus:bg-emerald-50
+        focus:text-emerald-800
+      "
+                    >
+                      Lost
+                    </SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -349,9 +470,13 @@ export default function LeadsPage() {
                     onClick={clearFilters}
                     className="
                       h-10
+
                       rounded-xl
+
                       px-3
+
                       text-slate-500
+
                       hover:bg-slate-100
                       hover:text-slate-800
                     "
@@ -362,6 +487,7 @@ export default function LeadsPage() {
               </div>
 
               {/* Actions */}
+
               <div
                 className="
                   flex
@@ -375,9 +501,13 @@ export default function LeadsPage() {
                       inline-flex
                       h-9
                       items-center
+
                       rounded-lg
+
                       bg-indigo-50
+
                       px-3
+
                       text-xs
                       font-semibold
                       text-indigo-700
@@ -396,13 +526,21 @@ export default function LeadsPage() {
                   className="
                     h-10
                     gap-2
+
                     rounded-xl
+
                     border-slate-200
+
                     bg-white
+
                     px-3
+
                     text-slate-600
+
                     shadow-none
+
                     transition
+
                     hover:bg-slate-50
                     hover:text-slate-900
                   "
@@ -410,32 +548,53 @@ export default function LeadsPage() {
                   <RefreshCw
                     className={`
                       size-3.5
+
                       ${isFetching ? "animate-spin" : ""}
                     `}
                   />
 
-                  <span className="hidden sm:inline">Refresh</span>
+                  <span
+                    className="
+                      hidden
+                      sm:inline
+                    "
+                  >
+                    Refresh
+                  </span>
                 </Button>
               </div>
             </div>
           </div>
 
           {/* Content */}
-          {isError ? (
+
+          {isError && !data ? (
             <ErrorState onRetry={() => void refetch()} />
-          ) : leads.length === 0 && !isLoading ? (
-            <EmptyState hasFilters={hasFilters} onClear={clearFilters} />
+          ) : leads.length === 0 && !isLoading && !isFetching ? (
+            <EmptyState
+              hasFilters={hasFilters}
+              search={search}
+              onClear={clearFilters}
+            />
           ) : (
             <LeadsTable
               leads={leads}
               total={total}
               page={data?.pagination.page ?? page}
               limit={data?.pagination.limit ?? limit}
+              /*
+               * Only full loading
+               * state on first load.
+               *
+               * Search/refetch keeps
+               * previous data visible.
+               */
               loading={isLoading}
               selectionModel={selectionModel}
               onSelectionChange={setSelectionModel}
               onPaginationChange={(newPage, newLimit) => {
                 setPage(newPage);
+
                 setLimit(newLimit);
               }}
             />
@@ -448,9 +607,11 @@ export default function LeadsPage() {
 
 function EmptyState({
   hasFilters,
+  search,
   onClear,
 }: {
   hasFilters: boolean;
+  search: string;
   onClear: () => void;
 }) {
   return (
@@ -461,7 +622,9 @@ function EmptyState({
         flex-col
         items-center
         justify-center
+
         px-6
+
         text-center
       "
     >
@@ -471,8 +634,11 @@ function EmptyState({
           size-12
           items-center
           justify-center
+
           rounded-2xl
+
           bg-indigo-50
+
           text-indigo-600
         "
       >
@@ -482,6 +648,7 @@ function EmptyState({
       <h3
         className="
           mt-4
+
           text-base
           font-semibold
           text-slate-900
@@ -493,15 +660,19 @@ function EmptyState({
       <p
         className="
           mt-1
+
           max-w-sm
+
           text-sm
           leading-6
           text-slate-500
         "
       >
-        {hasFilters
-          ? "Try changing your search or status filter."
-          : "Create your first lead to start building your pipeline."}
+        {search
+          ? `No leads found matching "${search}". Try a different name, email or phone number.`
+          : hasFilters
+            ? "No leads match the selected filters."
+            : "Create your first lead to start building your pipeline."}
       </p>
 
       {hasFilters && (
@@ -529,7 +700,9 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
         flex-col
         items-center
         justify-center
+
         px-6
+
         text-center
       "
     >
@@ -539,8 +712,11 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
           size-12
           items-center
           justify-center
+
           rounded-2xl
+
           bg-rose-50
+
           text-rose-600
         "
       >
@@ -550,6 +726,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
       <h3
         className="
           mt-4
+
           font-semibold
           text-slate-900
         "
@@ -560,6 +737,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
       <p
         className="
           mt-1
+
           text-sm
           text-slate-500
         "
