@@ -17,7 +17,11 @@ app.use(helmet());
 
 app.use(
   cors({
-    origin: env.FRONTEND_URL,
+    origin: [
+      "http://localhost:5173",
+      "https://stylework-lead-tracker.rahulkapgate.in",
+    ],
+    credentials: true,
   }),
 );
 
