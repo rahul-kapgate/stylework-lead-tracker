@@ -4,7 +4,7 @@ import type { GridRowSelectionModel } from "@mui/x-data-grid";
 
 import { motion, useReducedMotion } from "motion/react";
 
-import { Filter, RefreshCw, Users, X } from "lucide-react";
+import { Filter, LoaderCircle, RefreshCw, Users, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -33,6 +33,11 @@ import {
   validateLeadSearch,
 } from "@/features/leads/validation/leadSearch";
 
+import {
+  useBulkUpdateLeadStatus,
+  useUpdateLeadStatus,
+} from "@/features/leads/hooks/useLeadStatus";
+
 const SEARCH_DELAY = 350;
 
 export default function LeadsPage() {
@@ -54,6 +59,14 @@ export default function LeadsPage() {
     type: "include",
     ids: new Set(),
   });
+
+  const updateStatusMutation = useUpdateLeadStatus();
+
+  const bulkStatusMutation = useBulkUpdateLeadStatus();
+
+  const updatingLeadId = updateStatusMutation.isPending
+    ? (updateStatusMutation.variables?.leadId ?? null)
+    : null;
 
   /*
    * Validate the debounced search.
@@ -111,8 +124,12 @@ export default function LeadsPage() {
 
   const leads = data?.data ?? [];
 
-  const selectedCount =
-    selectionModel.type === "include" ? selectionModel.ids.size : 0;
+  const selectedLeadIds =
+    selectionModel.type === "include"
+      ? Array.from(selectionModel.ids).map(String)
+      : [];
+
+  const selectedCount = selectedLeadIds.length;
 
   const hasFilters = Boolean(search) || Boolean(status);
 
@@ -147,6 +164,45 @@ export default function LeadsPage() {
     setStatus(value === "ALL" ? undefined : (value as LeadStatus));
 
     setPage(1);
+  }
+
+  function handleLeadStatusChange(leadId: string, newStatus: LeadStatus) {
+    updateStatusMutation.mutate({
+      leadId,
+      status: newStatus,
+    });
+  }
+
+  function handleBulkStatusChange(value: string) {
+    if (selectedLeadIds.length === 0) {
+      return;
+    }
+
+    const newStatus = value as LeadStatus;
+
+    bulkStatusMutation.mutate(
+      {
+        leadIds: selectedLeadIds,
+
+        status: newStatus,
+      },
+
+      {
+        onSuccess: () => {
+          setSelectionModel({
+            type: "include",
+            ids: new Set(),
+          });
+        },
+      },
+    );
+  }
+
+  function clearSelection() {
+    setSelectionModel({
+      type: "include",
+      ids: new Set(),
+    });
   }
 
   return (
@@ -498,22 +554,217 @@ export default function LeadsPage() {
                 {selectedCount > 0 && (
                   <div
                     className="
-                      inline-flex
-                      h-9
-                      items-center
+      flex
+      flex-wrap
+      items-center
+      gap-2
 
-                      rounded-lg
+      rounded-xl
 
-                      bg-indigo-50
+      border
+      border-emerald-100
 
-                      px-3
+      bg-emerald-50/70
 
-                      text-xs
-                      font-semibold
-                      text-indigo-700
-                    "
+      p-1.5
+      pl-3
+    "
                   >
-                    {selectedCount} selected
+                    <span
+                      className="
+        whitespace-nowrap
+
+        text-xs
+        font-semibold
+        text-emerald-800
+      "
+                    >
+                      {selectedCount} {selectedCount === 1 ? "lead" : "leads"}{" "}
+                      selected
+                    </span>
+
+                    <div
+                      className="
+        h-5
+        w-px
+        bg-emerald-200
+      "
+                    />
+
+                    <Select
+                      disabled={bulkStatusMutation.isPending}
+                      onValueChange={handleBulkStatusChange}
+                    >
+                      <SelectTrigger
+                        className="
+          h-8
+          w-[160px]
+
+          rounded-lg
+
+          border-emerald-200
+
+          bg-white
+
+          text-xs
+
+          shadow-none
+
+          focus:ring-2
+          focus:ring-emerald-100
+        "
+                      >
+                        {bulkStatusMutation.isPending ? (
+                          <div
+                            className="
+              flex
+              items-center
+              gap-2
+            "
+                          >
+                            <LoaderCircle
+                              className="
+                size-3.5
+                animate-spin
+              "
+                            />
+                            Updating...
+                          </div>
+                        ) : (
+                          <SelectValue placeholder="Update status" />
+                        )}
+                      </SelectTrigger>
+
+                      <SelectContent
+                        position="popper"
+                        side="bottom"
+                        sideOffset={8}
+                        align="start"
+                        className="
+    z-[100]
+    w-[200px]
+
+    rounded-xl
+
+    border
+    border-slate-200
+
+    bg-white
+
+    p-1.5
+
+    shadow-[0_12px_32px_rgba(15,23,42,0.14)]
+  "
+                      >
+                        <SelectItem
+                          value="NEW"
+                          className="
+      h-9
+      cursor-pointer
+      rounded-lg
+      px-3
+      text-sm
+      text-slate-700
+
+      focus:bg-emerald-50
+      focus:text-emerald-800
+    "
+                        >
+                          New
+                        </SelectItem>
+
+                        <SelectItem
+                          value="CONTACTED"
+                          className="
+      h-9
+      cursor-pointer
+      rounded-lg
+      px-3
+      text-sm
+      text-slate-700
+
+      focus:bg-emerald-50
+      focus:text-emerald-800
+    "
+                        >
+                          Contacted
+                        </SelectItem>
+
+                        <SelectItem
+                          value="QUALIFIED"
+                          className="
+      h-9
+      cursor-pointer
+      rounded-lg
+      px-3
+      text-sm
+      text-slate-700
+
+      focus:bg-emerald-50
+      focus:text-emerald-800
+    "
+                        >
+                          Qualified
+                        </SelectItem>
+
+                        <SelectItem
+                          value="CONVERTED"
+                          className="
+      h-9
+      cursor-pointer
+      rounded-lg
+      px-3
+      text-sm
+      text-slate-700
+
+      focus:bg-emerald-50
+      focus:text-emerald-800
+    "
+                        >
+                          Converted
+                        </SelectItem>
+
+                        <SelectItem
+                          value="LOST"
+                          className="
+      h-9
+      cursor-pointer
+      rounded-lg
+      px-3
+      text-sm
+      text-slate-700
+
+      focus:bg-emerald-50
+      focus:text-emerald-800
+    "
+                        >
+                          Lost
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={bulkStatusMutation.isPending}
+                      onClick={clearSelection}
+                      className="
+        h-8
+
+        rounded-lg
+
+        px-2.5
+
+        text-xs
+        text-slate-500
+
+        hover:bg-white
+        hover:text-slate-800
+      "
+                    >
+                      Clear
+                    </Button>
                   </div>
                 )}
 
@@ -582,21 +833,15 @@ export default function LeadsPage() {
               total={total}
               page={data?.pagination.page ?? page}
               limit={data?.pagination.limit ?? limit}
-              /*
-               * Only full loading
-               * state on first load.
-               *
-               * Search/refetch keeps
-               * previous data visible.
-               */
               loading={isLoading}
               selectionModel={selectionModel}
               onSelectionChange={setSelectionModel}
               onPaginationChange={(newPage, newLimit) => {
                 setPage(newPage);
-
                 setLimit(newLimit);
               }}
+              onStatusChange={handleLeadStatusChange}
+              updatingLeadId={updatingLeadId}
             />
           )}
         </section>

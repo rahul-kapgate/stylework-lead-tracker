@@ -9,9 +9,9 @@ import {
 
 import { CalendarDays, Inbox, Mail, Phone } from "lucide-react";
 
-import { LeadStatusBadge } from "./LeadStatusBadge";
+import { LeadStatusSelect } from "./LeadStatusSelect";
 
-import type { Lead } from "../types/lead.types";
+import type { Lead, LeadStatus } from "../types/lead.types";
 
 interface LeadsTableProps {
   leads: Lead[];
@@ -27,6 +27,10 @@ interface LeadsTableProps {
   onSelectionChange: (model: GridRowSelectionModel) => void;
 
   onPaginationChange: (page: number, limit: number) => void;
+
+  onStatusChange: (leadId: string, status: LeadStatus) => void;
+
+  updatingLeadId?: string | null;
 }
 
 function getInitials(name?: string) {
@@ -127,6 +131,8 @@ export function LeadsTable({
   selectionModel,
   onSelectionChange,
   onPaginationChange,
+  onStatusChange,
+  updatingLeadId,
 }: LeadsTableProps) {
   const columns = useMemo<GridColDef<Lead>[]>(
     () => [
@@ -289,19 +295,28 @@ export function LeadsTable({
         field: "status",
         headerName: "Status",
 
-        width: 150,
+        width: 175,
 
         sortable: false,
 
         renderCell: ({ row }) => (
           <div
             className="
-                flex
-                h-full
-                items-center
-              "
+        flex
+        h-full
+        items-center
+      "
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
           >
-            <LeadStatusBadge status={row.status} />
+            <LeadStatusSelect
+              value={row.status}
+              disabled={updatingLeadId === String(row.id)}
+              onChange={(status) => {
+                onStatusChange(String(row.id), status);
+              }}
+            />
           </div>
         ),
       },
@@ -343,7 +358,7 @@ export function LeadsTable({
         ),
       },
     ],
-    [],
+    [onStatusChange, updatingLeadId],
   );
 
   const tableHeight = Math.min(Math.max(105 + leads.length * 64, 310), 690);
@@ -407,12 +422,20 @@ export function LeadsTable({
           backgroundColor: "#FFFFFF",
 
           /*
-           * Header
+           * Sticky table header
            */
           "& .MuiDataGrid-columnHeaders": {
+            position: "sticky",
+
+            top: 0,
+
+            zIndex: 5,
+
             borderBottom: "1px solid #E5EEE9",
 
             backgroundColor: "#F7FAF8",
+
+            boxShadow: "0 1px 3px rgba(15, 23, 42, 0.06)",
           },
 
           "& .MuiDataGrid-columnHeader": {
