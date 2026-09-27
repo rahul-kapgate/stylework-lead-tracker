@@ -22,5 +22,4 @@ router.patch("/bulk/status", updateBulkLeadStatus);
 
 router.patch("/:id/status", updateLeadStatus);
 
-
 export default router;

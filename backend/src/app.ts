@@ -12,15 +12,18 @@ import { notFoundHandler } from "./middleware/notFound.middleware.js";
 import { errorHandler } from "./middleware/error.middleware.js";
 
 const app = express();
+app.set("trust proxy", 1);
 
 app.use(helmet());
 
+const allowedOrigins =
+  env.NODE_ENV === "production"
+    ? [env.FRONTEND_URL]
+    : ["http://localhost:5173", env.FRONTEND_URL];
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://stylework-lead-tracker.rahulkapgate.in",
-    ],
+    origin: allowedOrigins,
     credentials: true,
   }),
 );
